@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공간 비즈니스 ROI 분석기</title>
+    <style>
+        :root {
+            --primary: #222;
+            --accent: #d35400;
+            --bg: #f8f9fa;
+        }
+        body {
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--primary);
+        }
+        .container {
+            background: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 420px;
+        }
+        h2 {
+            text-align: center;
+            font-weight: 800;
+            margin-bottom: 30px;
+            letter-spacing: -1px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            background: #fafafa;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: #fff;
+        }
+        button {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #444;
+        }
+        /* 결과 영역 - 초기에는 숨김 */
+        #resultArea {
+            display: none;
+            margin-top: 30px;
+            padding: 25px;
+            background: #fdfdfd;
+            border: 2px solid #eee;
+            border-radius: 15px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .payback-label { font-size: 0.9rem; color: #777; }
+        .payback-value {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin: 10px 0;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .good { background: #e8f5e9; color: #2e7d32; }
+        .bad { background: #ffebee; color: #c62828; }
+        .profit-detail {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #444;
+            word-break: keep-all;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📸 아키네스트 수익성 분석기</h2>
+    
+    <div class="input-group">
+        <label>평균 객단가 (원)</label>
+        <input type="number" id="unitPrice" placeholder="예: 300000">
+    </div>
+    
+    <div class="input-group">
+        <label>월 평균 판매(예약) 건수</label>
+        <input type="number" id="monthlySales" placeholder="예: 15">
+    </div>
+    
+    <div class="input-group">
+        <label>촬영 견적 (원)</label>
+        <input type="number" id="photoCost" placeholder="예: 1500000">
+    </div>
+
+    <div class="input-group">
+        <label>기대 매출 상승률 (%)</label>
+        <input type="number" id="growthRate" placeholder="예: 15" value="15">
+    </div>
+
+    <button onclick="runAnalysis()">수익성 분석하기</button>
+
+    <div id="resultArea">
+        <div class="payback-label">예상 비용 회수 기간</div>
+        <div id="paybackValue" class="payback-value">-</div>
+        <div id="statusBadge" class="status-badge"></div>
+        <div id="profitDetail" class="profit-detail"></div>
+    </div>
+</div>
+
+<script>
+    function runAnalysis() {
+        // 값 가져오기
+        const unitPrice = parseFloat(document.getElementById('unitPrice').value);
+        const monthlySales = parseFloat(document.getElementById('monthlySales').value);
+        const photoCost = parseFloat(document.getElementById('photoCost').value);
+        const growthRate = parseFloat(document.getElementById('growthRate').value) / 100;
+
+        // 유효성 검사
+        if (!unitPrice || !monthlySales || !photoCost || isNaN(growthRate)) {
+            alert("모든 항목에 숫자를 정확히 입력해 주세요.");
+            return;
+        }
+
+        const resultArea = document.getElementById('resultArea');
+        const paybackValue = document.getElementById('paybackValue');
+        const statusBadge = document.getElementById('statusBadge');
+        const profitDetail = document.getElementById('profitDetail');
+
+        // 월 추가 수익 계산
+        const monthlyExtraProfit = unitPrice * monthlySales * growthRate;
+
+        // 회수 기간 계산 (월)
+        const months = photoCost / monthlyExtraProfit;
+
+        // 결과 영역 표시
+        resultArea.style.display = 'block';
+
+        if (isFinite(months) && months > 0) {
+            paybackValue.innerText = months.toFixed(1) + "개월";
+            
+            const formattedProfit = Math.round(monthlyExtraProfit).toLocaleString();
+
+            if (months <= 6) {
+                statusBadge.innerText = "분석 결과: 투자 강력 권장";
+                statusBadge.className = "status-badge good";
+                profitDetail.innerHTML = `제 촬영 서비스를 통해 매달 <b>약 ${formattedProfit}원</b>의 추가 수익이 예상됩니다.<br>이는 비즈니스 성장을 위한 매우 합리적인 투자입니다.`;
+            } else {
+                statusBadge.innerText = "분석 결과: 투자 비권장";
+                statusBadge.className = "status-badge bad";
+                profitDetail.innerHTML = `현재 비즈니스 구조상 촬영비 회수에 ${months.toFixed(1)}개월 이상 소요됩니다.<br>이 경우 <b>서비스 구매를 권장하지 않습니다.</b> 본질적인 객단가 개선이 우선입니다.`;
+            }
+        } else {
+            alert("입력값을 다시 확인해 주세요.");
+            resultArea.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>
